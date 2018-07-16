@@ -28,7 +28,7 @@
                 <input @change="getRes" type="checkbox" :value="sub.OPTION_CODE + ',' + sub.OPTION_LABEL" v-model="selected.facets" />
                 <label>{{sub.OPTION_LABEL}}</label>
               </div>
-              <div class="subFacet" @click="toggleMenu" v-else-if="sub.OPTIONS">
+              <div class="subFacet" @click="toggleMenu" v-else-if="hasMenu(sub.OPTIONS)">
                 <input type="checkbox" @change="selectFac" />
                 <span class="subTitle caret">{{sub.FACET_LABEL}}</span>
                 <div :id="sub.FACET_LABEL" class="hide">
@@ -166,36 +166,21 @@
         })
       },
       methods: {
+        hasMenu: function(X){return Object.keys(X).length > 0 ? true : false},
         trimmed: function(x) {return x.length > 74 ? x.slice(0,67) + '...' : x},
         toggleMenu: function (e) {
-          if (e.originalTarget) {
-            e.srcElement = e.originalTarget
-          }
+          if (e.originalTarget) {e.srcElement = e.originalTarget}
           $(document.getElementById(e.srcElement.innerText)).toggle(200);
         },
-        page: function (e) {
-          if (e.originalTarget) {
-            e.srcElement = e.originalTarget
-          }
-          if (e.srcElement.id == 'first') {
-            this.results.page == 1
-          }
-          if (e.srcElement.id == 'previous') {
-            this.results.page--
-          }
-          if (e.srcElement.id == 'next') {
-            this.results.page++
-          }
-          if (e.srcelement.id == 'last') {
+        page: function(e) {
+          if (e.originalTarget) {e.srcElement = e.originalTarget}
+          if (e.srcElement.id == 'first') {this.results.page = 1}
+          if (e.srcElement.id == 'previous') {this.results.page--}
+          if (e.srcElement.id == 'next') {this.results.page++}
+          if (e.srcElement.id == 'last') {
             this.results.page = Math.ceil(this.results.totalResults / this.results.resultsperpage)
           }
-          console.log(search + '&page=' + this.results.page)
-          $.ajax({
-            url: search + '&page=' + this.results.page,
-            success: function (data) {
-              app.results = data;
-            }
-          })
+          this.getRes();
         },
         selectFac: function (e) {
           if (e.originalTarget) {e.srcElement = e.originalTarget}
@@ -222,24 +207,15 @@
       },
         getRes: function () {
         var arg = [];
-        var query = '';
-        var facets = this.selected.facets;
         var results = this.results;
-        for (var item in facets) {
-          arg.push(facets[item].split(',').splice(0, 1).join(''))
-        };
-        if (this.search != '') {
-          query += '&keyword=' + this.search
-        }
-        if (results.sort != '') {
-          query += '&sort=' + results.sort
-        }
-        if (results.resultsperpage != '') {
-          query += '&resultsperpage=' + results.resultsperpage
-        }
-        if (arg.join() != '') {
-          query += '&qpParamvals=' + arg.join()
-        }
+        var facets = this.selected.facets;
+        var query = '';
+        for (var item in facets) {arg.push(facets[item].split(',').splice(0, 1).join(''))};
+        if (this.search != '') {query += '&keyword=' + this.search}
+        if (results.sort != '') {query += '&sort=' + results.sort;}
+        if (results.resultsperpage != '') {query += '&resultsperpage=' + results.resultsperpage;}
+        if (arg.join() != '') {query += '&qpParamvals=' + arg.join()}
+        console.log(search + query)
         $.ajax({
           url: search + query,
           success: function (data) {
