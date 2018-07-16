@@ -1,0 +1,294 @@
+body {
+  background: -webkit-gradient(linear, right top, left top, from(#a1c4fd), to(#c2e9fb));
+  background: linear-gradient(to left, #a1c4fd, #c2e9fb);
+}
+
+#app {
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+  padding: 60px .5em;
+}
+
+.wrapper {
+  padding-top: 2em;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  text-align: left;
+}
+
+.lg {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  vertical-align: top;
+  margin-left: 1em;
+}
+
+.parentFacet,
+.subFacet {
+  position: relative;
+  cursor: pointer;
+  margin: .5em 0;
+}
+
+.subFacet {
+  margin-top: 0.25em;
+}
+
+.parentTitle {
+  border-bottom: 1px solid silver;
+  font-weight: bold;
+  margin: .25em 0;
+}
+
+.caret::after {
+  font-family: "Font Awesome 5 Free";
+  content: "\f0da";
+  position: absolute;
+  right: 0;
+  padding-right: .3em;
+}
+
+.subTitle {
+  font-family: sans-serif;
+  margin-left: .5em;
+  font-size: .95em;
+  font-weight: bold;
+}
+
+.kidFacet {
+  margin-left: 1em;
+  list-style: none;
+  font-size: .8em;
+}
+
+.filters,
+.results {
+  background-color: white;
+}
+
+.filters {
+  padding: .25em;
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1;
+  height: 100%;
+  max-width: 20%;
+}
+
+.clear {
+  display: block;
+  width: 100%;
+  height: 30px;
+  border: 1px solid #7f7a7a;
+  margin-top: 0.25em;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  text-align: center;
+}
+
+.clear:hover {
+  background-color: #2970bc;
+  color: white;
+}
+
+.filters_upper {
+  border-bottom: 3px solid gray;
+  padding-bottom: .5em;
+  margin-bottom: .5em;
+}
+
+.filters_upper .search {
+  display: inline-table;
+  width: 17%;
+  position: relative;
+  vertical-align: top;
+  cursor: pointer;
+  height: 35px;
+  background-color: #2970bc;
+}
+
+.filters_upper .search:hover {
+  background-color: #4290e4;
+}
+
+.searchBox {
+  display: inline-block;
+  -webkit-box-sizing: border-box;
+          box-sizing: border-box;
+  width: 100%;
+  height: 35px;
+}
+
+.results {
+  -webkit-box-flex: 3;
+      -ms-flex: 3;
+          flex: 3;
+  padding: 0 2em;
+  margin-left: 2em;
+}
+
+.results .noResults {
+  text-align: center;
+}
+
+.results .appliedP {
+  font-size: .9em;
+  font-weight: bold;
+}
+
+.results .appliedP .appliedC {
+  font-weight: normal;
+}
+
+.results .resultHead {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  -webkit-box-align: baseline;
+      -ms-flex-align: baseline;
+          align-items: baseline;
+}
+
+.results .resultHead .print {
+  display: table;
+  position: relative;
+  height: 100%;
+}
+
+.results .resultHead .print .printPDF {
+  background-color: white;
+  border: 1px solid gray;
+  border-right: none;
+  padding: .5em;
+}
+
+.results .resultHead .print .printPDF:hover {
+  background-color: silver;
+}
+
+.results .resultHead .print .printPDF span {
+  margin-left: 5px;
+}
+
+.results .resultHead .print .count {
+  background-color: #2970bc;
+  width: 30px;
+  display: inline-block;
+  color: white;
+  text-align: center;
+  padding: 3.1% 0;
+}
+
+.results .resultHead .breakdown {
+  text-align: right;
+  display: inline-block;
+  font-weight: normal;
+}
+
+.results .resultHead .breakdown .coh_icon,
+.results .resultHead .breakdown .proj_icon {
+  background: url("assets/Project-icon.svg");
+  width: 35px;
+  height: 35px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.results .resultHead .breakdown .coh_icon {
+  background: url("assets/cohort-icon.svg");
+}
+
+.results .result_options {
+  margin-bottom: .5em;
+  margin-top: .5em;
+  border-top: 1px solid;
+  padding-top: .5em;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: justify;
+      -ms-flex-pack: justify;
+          justify-content: space-between;
+  -webkit-box-align: baseline;
+      -ms-flex-align: baseline;
+          align-items: baseline;
+}
+
+.res_title {
+  display: inline-block;
+  margin: 0 0 .5em 0;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.result {
+  padding: 1em 0;
+  border-top: 1px solid black;
+}
+
+.result input {
+  vertical-align: top;
+}
+
+.result .result_box {
+  margin-left: 1em;
+  display: inline-block;
+}
+
+.info {
+  font-weight: bold;
+  margin: .25em 0 0 0;
+  display: block;
+}
+
+.info span {
+  font-weight: normal;
+}
+
+.hide {
+  display: none;
+}
+
+.fa-search {
+  color: white;
+}
+
+.fa-search:before {
+  font-size: 1.25em;
+  display: table-cell;
+  vertical-align: middle;
+  text-align: center;
+}
+
+.dwn {
+  -webkit-transform: rotate(90deg);
+          transform: rotate(90deg);
+}
+
+.pag {
+  display: inline-block;
+  border: 1px solid black;
+  border-left: none;
+  font-size: 1em;
+}
+
+.pag span {
+  cursor: pointer;
+  display: inline-block;
+  padding: 2px;
+  border-left: 1px solid black;
+  text-align: center;
+}
+
+.pag .main {
+  font-weight: normal;
+  cursor: auto;
+}
+/*# sourceMappingURL=cohort.css.map */

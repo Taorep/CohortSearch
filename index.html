@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Cohort</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
+  <link rel="stylesheet" href="cohort.css" />
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt"
+    crossorigin="anonymous">
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+    crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="wrapper">
+
+      <div class="filters">
+        <div class="filters_upper">
+          <input @keyup="getRes" v-model="search" placeholder="Enter Search Term" class="searchBox" type="text" />
+        </div>
+        <button @click="selected.facets=[]" class="clear">Clear Filters</button>
+        <div class="parentFacet" v-for="facet in facets" :key="facet.id">
+          <h4 @click="toggleMenu" class="parentTitle caret" :key="facet.id">{{facet.FACET_LABEL}}</h4>
+          <div class="hide" :id="facet.FACET_LABEL">
+            <template v-for="sub in facet.OPTIONS">
+              <div v-if="sub.OPTION_LABEL" :key="sub.id"><!--no submenu-->
+                <input @change="getRes" type="checkbox" :value="sub.OPTION_CODE + ',' + sub.OPTION_LABEL" v-model="selected.facets" />
+                <label>{{sub.OPTION_LABEL}}</label>
+              </div>
+              <div class="subFacet" @click="toggleMenu" v-else-if="sub.OPTIONS">
+                <input type="checkbox" @change="selectFac" />
+                <span class="subTitle caret">{{sub.FACET_LABEL}}</span>
+                <div :id="sub.FACET_LABEL" class="hide">
+                  <div class="kidFacet" v-for="kid in sub.OPTIONS" :key="kid.id">
+                    <input @change="getRes" v-model="selected.facets" type="checkbox" :value="kid.OPTION_CODE + ',' + kid.OPTION_LABEL" />
+                    <label>{{kid.OPTION_LABEL}}</label>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <div class="results">
+        <h2>Search Results for: 
+          <span v-if="search">{{search}}</span>
+          <span v-else>{{results.keyword}}</span>
+        </h2>
+        <div class="resultHead">
+          <div class="print">
+            <button class="printPDF">Print Selected Items as PDF</button>
+            <div class="count">{{selected.results.length}}</div>
+          </div>
+          <h4 v-if="results.typecounts" class="breakdown">
+            <strong>{{results.totalResults}} Results:</strong>
+            <span class="coh_icon"></span>{{results.typecounts.c}} Study Populations
+            <span class="proj_icon"></span>{{results.typecounts.p}} Projects
+          </h4>
+        </div>
+        <div class="appliedP">Applied Facets:
+          <span class="appliedC">{{appliedFacets()}}</span>
+        </div>
+        <div class="result_options">
+          <div>
+            <input @click="selectRes" type="checkbox">
+            <label>Select All</label>
+          </div>
+          <div>
+            <label>Sort:</label>
+            <select @change="getRes" v-model="results.sort">
+              <option value="resource_title">Title (A-Z)</option>
+              <option value="Institution">Institution</option>
+              <option value="PI">Principal Investigator</option>
+              <option value="Type">Type</option>
+            </select>
+          </div>
+          <div class="pag">
+            <span @click="page" id="first">&lt;&lt;</span>
+            <span @click="page" id="previous">&lt;</span>
+            <span class="main">Page {{results.page}} of {{Math.ceil(results.totalResults / results.resultsperpage)}}</span>
+            <span @click="page" id="next">&gt;</span>
+            <span @click="page" id="last">&gt;&gt;</span>
+          </div>
+          <div>
+            <label>Show:</label>
+            <select @change="getRes" v-model="results.resultsperpage">
+              <option value="10">10</option>
+              <option value="25">25</option>
+            </select>
+            <label>of {{results.totalResults}}</label>
+          </div>
+        </div>
+        <h2 class="noResults" v-if="results.noResults">No results, Please try a different search.</h2>
+        <!-- Each result -->
+        <div v-else class="result" v-for="result in results.resultslist" :key="result.id">
+          <input type="checkbox" v-model="selected.results" :value="result" />
+          <img :src="'assets/' + result.icon + '-icon.svg'" class="lg" />
+          <div class="result_box">
+            <h3 class="res_title">{{trimmed(result.resource_title)}}</h3>
+            <span class="info">Principal Investigator:
+              <span> {{trimmed(result.pi)}}</span>
+            </span>
+            <span class="info">Institution:
+              <span> {{result.institution}}</span>
+            </span>
+            <template v-if="result.type == 'c'">
+              <span class="info">Location:
+                <span> {{result.location}}</span>
+              </span>
+              <span class="info">Number of Participants:
+                <span> {{result.number_participants}}</span>
+              </span>
+            </template>
+            <template v-else>
+              <span class="info">Study Populations:
+                <span> {{trimmed(result.top_cohort_name)}}</span>
+              </span>
+              <span class="info">Grant Number:
+                <span> {{result.grant_number}}</span>
+              </span>
+            </template>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    var search = 'https://tools3dev.niehs.nih.gov/cohorts/index.cfm?do=remote.search';
+
+    function getIcon() {
+      var res = app.results.resultslist;
+      for (var ult in res) {
+        res[ult].icon = res[ult].type == 'c' ? 'cohort' : 'project'
+      }
+    }
+    var app = new Vue({
+      el: "#app",
+      data: function () {
+        return {
+          search: '',
+          facets: {},
+          results: {},
+          selected: {
+            facets: [],
+            results: [],
+          }
+        }
+      },
+      created: function () {
+        $.ajax({
+          url: search.replace(/\bsearch/gi, 'facets'),
+          success: function (data) {
+            app.facets = data
+          }
+        })
+        //app.results = _data_init_cohorts;
+        //replaces call below
+        $.ajax({
+          url: 'https://tools3dev.niehs.nih.gov/cohorts/index.cfm?do=remote.search',
+          success: function (data) {
+            app.results = data;
+            getIcon();
+          }
+        })
+      },
+      methods: {
+        trimmed: function(x) {return x.length > 74 ? x.slice(0,67) + '...' : x},
+        toggleMenu: function (e) {
+          if (e.originalTarget) {
+            e.srcElement = e.originalTarget
+          }
+          $(document.getElementById(e.srcElement.innerText)).toggle(200);
+        },
+        page: function (e) {
+          if (e.originalTarget) {
+            e.srcElement = e.originalTarget
+          }
+          if (e.srcElement.id == 'first') {
+            this.results.page == 1
+          }
+          if (e.srcElement.id == 'previous') {
+            this.results.page--
+          }
+          if (e.srcElement.id == 'next') {
+            this.results.page++
+          }
+          if (e.srcelement.id == 'last') {
+            this.results.page = Math.ceil(this.results.totalResults / this.results.resultsperpage)
+          }
+          console.log(search + '&page=' + this.results.page)
+          $.ajax({
+            url: search + '&page=' + this.results.page,
+            success: function (data) {
+              app.results = data;
+            }
+          })
+        },
+        selectFac: function (e) {
+          if (e.originalTarget) {e.srcElement = e.originalTarget}
+          var sfacets = this.selected.facets;
+          for (var x in e.path[1].lastChild.children) {
+            var subF = e.path[1].lastChild.children[x].firstChild;
+            if (subF) {
+              e.srcElement.checked ? sfacets.push(subF.value) : sfacets.splice(sfacets.indexOf(subF.value), 1)
+            }
+          }
+          this.getRes(); 
+        },
+        selectRes: function (e) {
+        if (e.originalTarget) {e.srcElement = e.originalTarget}
+        e.srcElement.checked ? this.selected.results = this.results.resultslist : this.selected.results = []
+      },
+        appliedFacets: function () {
+        var y = [];
+        var sfacets = this.selected.facets;
+        for (var i in sfacets) {
+          y.push(' ' + sfacets[i].split(',').splice(1, 1).join(''))
+        }
+        return y.toString();
+      },
+        getRes: function () {
+        var arg = [];
+        var query = '';
+        var facets = this.selected.facets;
+        var results = this.results;
+        for (var item in facets) {
+          arg.push(facets[item].split(',').splice(0, 1).join(''))
+        };
+        if (this.search != '') {
+          query += '&keyword=' + this.search
+        }
+        if (results.sort != '') {
+          query += '&sort=' + results.sort
+        }
+        if (results.resultsperpage != '') {
+          query += '&resultsperpage=' + results.resultsperpage
+        }
+        if (arg.join() != '') {
+          query += '&qpParamvals=' + arg.join()
+        }
+        $.ajax({
+          url: search + query,
+          success: function (data) {
+            app.results = data;
+            getIcon()
+            if (!app.results.totalResults) {
+              app.results.page = 0
+              app.results.noResults = true;
+            }
+          }
+        })
+      },
+    }
+  })
+  </script>
+</body>
+
+</html>
