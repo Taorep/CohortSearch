@@ -24,12 +24,13 @@
           <h4 @click="toggleMenu" class="parentTitle caret" :key="facet.id">{{facet.FACET_LABEL}}</h4>
           <div class="hide" :id="facet.FACET_LABEL">
             <template v-for="sub in facet.OPTIONS">
-              <div v-if="sub.OPTION_LABEL" :key="sub.id"><!--no submenu-->
+              <div v-if="sub.OPTION_LABEL" :key="sub.id">
+                <!--no submenu-->
                 <input @change="getRes" type="checkbox" :value="sub.OPTION_CODE + ',' + sub.OPTION_LABEL" v-model="selected.facets" />
                 <label>{{sub.OPTION_LABEL}}</label>
               </div>
               <div class="subFacet" @click="toggleMenu" v-else-if="hasMenu(sub.OPTIONS)">
-                <input type="checkbox" @change="selectFac" />
+                <input type="checkbox" @change="select_F" />
                 <span class="subTitle caret">{{sub.FACET_LABEL}}</span>
                 <div :id="sub.FACET_LABEL" class="hide">
                   <div class="kidFacet" v-for="kid in sub.OPTIONS" :key="kid.id">
@@ -44,7 +45,7 @@
       </div>
 
       <div class="results">
-        <h2>Search Results for: 
+        <h2>Search Results for:
           <span v-if="search">{{search}}</span>
           <span v-else>{{results.keyword}}</span>
         </h2>
@@ -64,7 +65,7 @@
         </div>
         <div class="result_options">
           <div>
-            <input @click="selectRes" type="checkbox">
+            <input @click="select_R" type="checkbox">
             <label>Select All</label>
           </div>
           <div>
@@ -166,24 +167,35 @@
         })
       },
       methods: {
+        browserSync: function(x){return x.originalTarget ? x.srcElement = x.originalTarget : x.srcElement;}, 
+        getCode: function(x){return x.split(',').splice(0, 1).join('')},
+        getLabel: function(x){return x.split(',').splice(1, 1).join('')},
         hasMenu: function(X){return Object.keys(X).length > 0 ? true : false},
-        trimmed: function(x) {return x.length > 74 ? x.slice(0,67) + '...' : x},
-        toggleMenu: function (e) {
-          if (e.originalTarget) {e.srcElement = e.originalTarget}
+        trimmed: function(x){return x.length > 74 ? x.slice(0, 67) + '...' : x},
+        toggleMenu: function(e){
+          this.browserSync(e);
           $(document.getElementById(e.srcElement.innerText)).toggle(200);
         },
-        page: function(e) {
-          if (e.originalTarget) {e.srcElement = e.originalTarget}
-          if (e.srcElement.id == 'first') {this.results.page = 1}
-          if (e.srcElement.id == 'previous') {this.results.page--}
-          if (e.srcElement.id == 'next') {this.results.page++}
+        page: function (e) {
+          this.browserSync(e);
+          if (e.srcElement.id == 'first') {
+            this.results.page = 1
+          }
+          if (e.srcElement.id == 'previous') {
+            return this.results.page <= 1 ? this.results.page = 1 : this.results.page--
+          }
+          if (e.srcElement.id == 'next') {
+            var lastPage = Math.ceil(this.results.totalResults / this.results.resultsperpage);
+            if(this.results.page >= lastPage){this.results.page = lastPage}
+            else{this.results.page++}
+          }
           if (e.srcElement.id == 'last') {
             this.results.page = Math.ceil(this.results.totalResults / this.results.resultsperpage)
           }
           this.getRes();
         },
-        selectFac: function (e) {
-          if (e.originalTarget) {e.srcElement = e.originalTarget}
+        select_F: function (e) {
+          this.browserSync(e);
           var sfacets = this.selected.facets;
           for (var x in e.path[1].lastChild.children) {
             var subF = e.path[1].lastChild.children[x].firstChild;
@@ -191,45 +203,61 @@
               e.srcElement.checked ? sfacets.push(subF.value) : sfacets.splice(sfacets.indexOf(subF.value), 1)
             }
           }
-          this.getRes(); 
+          this.getRes();
         },
-        selectRes: function (e) {
-        if (e.originalTarget) {e.srcElement = e.originalTarget}
-        e.srcElement.checked ? this.selected.results = this.results.resultslist : this.selected.results = []
-      },
+        select_R: function (e) {
+          this.browserSync(e);
+          e.srcElement.checked ? this.selected.results = this.results.resultslist : this.selected.results = []
+        },
         appliedFacets: function () {
-        var y = [];
-        var sfacets = this.selected.facets;
-        for (var i in sfacets) {
-          y.push(' ' + sfacets[i].split(',').splice(1, 1).join(''))
-        }
-        return y.toString();
-      },
-        getRes: function () {
-        var arg = [];
-        var results = this.results;
-        var facets = this.selected.facets;
-        var query = '';
-        for (var item in facets) {arg.push(facets[item].split(',').splice(0, 1).join(''))};
-        if (this.search != '') {query += '&keyword=' + this.search}
-        if (results.sort != '') {query += '&sort=' + results.sort;}
-        if (results.resultsperpage != '') {query += '&resultsperpage=' + results.resultsperpage;}
-        if (arg.join() != '') {query += '&qpParamvals=' + arg.join()}
-        console.log(search + query)
-        $.ajax({
-          url: search + query,
-          success: function (data) {
-            app.results = data;
-            getIcon()
-            if (!app.results.totalResults) {
-              app.results.page = 0
-              app.results.noResults = true;
-            }
+          var y = [];
+          var sfacets = this.selected.facets;
+          for (var i in sfacets) {
+            y.push(' ' + this.getLabel(sfacets[i]));
           }
-        })
-      },
-    }
-  })
+          return y.toString();
+        },
+        getRes: function () {
+          var arg = [];
+          var results = this.results;
+          var facets = this.selected.facets;
+          var query = '';
+          var page = '&page=';
+          for (var item in facets) {
+            arg.push(this.getCode(facets[item]))
+          }
+          if (this.search != '') {
+            query += '&keyword=' + this.search
+          }
+          if (results.sort != '') {
+            query += '&sort=' + results.sort;
+          }
+          if (results.resultsperpage != '') {
+            query += '&resultsperpage=' + results.resultsperpage;
+            //page = '&page=' + 1;
+          } else {
+            page += this.results.page
+          }
+          if (arg.join() != '') {
+            query += '&qpParamvals=' + arg.join();
+            page += 1
+          } else {
+            page += this.results.page
+          }
+          $.ajax({
+            url: search + query + page,
+            success: function (data) {
+              app.results = data;
+              getIcon()
+              if (!app.results.totalResults) {
+                app.results.page = 0
+                app.results.noResults = true;
+              }
+            }
+          })
+        },
+      }
+    })
   </script>
 </body>
 
