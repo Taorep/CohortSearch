@@ -134,15 +134,13 @@
           app.data = data
           if(!app.data.totalResults){app.data.page = 0}
           var res = app.data.resultslist
-          for (var ult in res) {
-            res[ult].icon = res[ult].type == 'c' ? 'cohort' : 'project'
-          }
+          for (var ult in res) {res[ult].icon = res[ult].type == 'c' ? 'cohort' : 'project'}
         },      
       })  
     }
     var app = new Vue({
       el: "#app",
-      data: function () {
+      data:function(){
         return {
           data: {},
           selected: {
@@ -151,9 +149,7 @@
           }
         }
       },
-      created: function () {
-        // app.results = _data_init_cohorts; //replaces f(n) below
-        getData(search);
+      created: function () {getData(search);// app.results = _data_init_cohorts; //replaces f(n) 
       },
       methods: {
         browserSync: function(e){
@@ -168,6 +164,7 @@
         hasMenu: function(x){return Object.keys(x).length > 0 ? true : false},
         trimmed: function(x){return x.length > 74 ? x.slice(0, 67) + '...' : x},
         toggleMenu: function(e){$(document.getElementById(this.browserSync(e).src.innerText)).toggle(200)},
+        all_res:function(e){this.selected.results = this.browserSync(e).src.checked ? this.data.resultslist : []},
         page: function(e) {
           var id = this.browserSync(e).src.id;
           switch(id){
@@ -178,23 +175,22 @@
           }
           this.getRes();
         },
-        select_F: function(e){
-          var data = this.browserSync(e);
-          var sFacets = this.selected.facets;
-          var parent = document.getElementById(data.subs);
-          $(document.getElementById(this.browserSync(e).src.nextElementSibling.innerText)).toggle(200);
-          for(var child in parent.children){
-            var kid = parent.children[child].firstChild;
-            if(kid){data.src.checked ? sFacets.push(kid.value) : sFacets.splice(sFacets.indexOf(kid.value),1)}
-          }
-          this.getRes(); 
-        },
-        all_res:function(e){this.selected.results = this.browserSync(e).src.checked ? this.data.resultslist : []},
         appliedFacets: function(){
           var y = [];
           var sfacets = this.selected.facets;
           for(var i in sfacets){y.push(this.getLabel(sfacets[i]))}
           return y.toString();
+        },
+        select_F: function(e){
+          var data = this.browserSync(e);
+          var sFacets = this.selected.facets;
+          var parent = document.getElementById(data.subs);
+          $(document.getElementById(data.src.nextElementSibling.innerText)).toggle(200);
+          for(var child in parent.children){
+            var kid = parent.children[child].firstChild;
+            if(kid){data.src.checked ? sFacets.push(kid.value) : sFacets.splice(sFacets.indexOf(kid.value),1)}
+          }
+          this.getRes(); 
         },
         getRes: function(){
           var arg = [];
