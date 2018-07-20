@@ -14,28 +14,28 @@
 <body>
   <div id="app">
     <div class="wrapper">
-
       <div class="filters">
         <div class="filters_upper">
-          <input @keyup="getRes" v-model="search" placeholder="Enter Search Term" class="searchBox" type="text" />
+          <input @keyup="getRes" v-model="data.keyword" placeholder="Enter Search Term" class="searchBox" type="text" />
         </div>
         <button @click="selected.facets=[]" class="clear">Clear Filters</button>
-        <div class="parentFacet" v-for="facet in facets" :key="facet.id">
-          <h4 @click="toggleMenu" class="parentTitle caret" :key="facet.id">{{facet.FACET_LABEL}}</h4>
+        <div class="parentFacet" v-for="facet in data.facets" :key="facet.id">
+          <h4 @click="toggleMenu" class="un parentTitle caret" :key="facet.id">{{facet.FACET_LABEL}}</h4>
           <div class="hide" :id="facet.FACET_LABEL">
             <template v-for="sub in facet.OPTIONS">
               <div v-if="sub.OPTION_LABEL" :key="sub.id">
                 <!--no submenu-->
-                <input @change="getRes" type="checkbox" :value="sub.OPTION_CODE + ',' + sub.OPTION_LABEL" v-model="selected.facets" />
-                <label>{{sub.OPTION_LABEL}}</label>
+                  <input @change="getRes" type="checkbox" :value="sub.OPTION_CODE + ',' + sub.OPTION_LABEL" v-model="selected.facets" />
+                  <label>{{sub.OPTION_LABEL}} ({{sub.COUNT}})</label>
+               
               </div>
               <div class="subFacet" @click="toggleMenu" v-else-if="hasMenu(sub.OPTIONS)">
                 <input type="checkbox" @change="select_F" />
-                <span class="subTitle caret">{{sub.FACET_LABEL}}</span>
+                <span class="un subTitle caret">{{sub.FACET_LABEL}} </span>
                 <div :id="sub.FACET_LABEL" class="hide">
                   <div class="kidFacet" v-for="kid in sub.OPTIONS" :key="kid.id">
-                    <input @change="getRes" v-model="selected.facets" type="checkbox" :value="kid.OPTION_CODE + ',' + kid.OPTION_LABEL" />
-                    <label>{{kid.OPTION_LABEL}}</label>
+                    <input @change="getRes" v-model="selected.facets" type="checkbox" :value="kid.OPTION_CODE + ',' + kid.OPTION_LABEL"/>
+                    <label>{{kid.OPTION_LABEL}} ({{kid.COUNT}})</label>
                   </div>
                 </div>
               </div>
@@ -45,19 +45,16 @@
       </div>
 
       <div class="results">
-        <h2>Search Results for:
-          <span v-if="search">{{search}}</span>
-          <span v-else>{{results.keyword}}</span>
-        </h2>
+        <h2>Search Results for:{{data.keyword}}</h2>
         <div class="resultHead">
           <div class="print">
-            <button class="printPDF">Print Selected Items as PDF</button>
+            <button @click="print" class="printPDF">Print Selected Items as PDF<span class="far fa-file-pdf"></span></button>
             <div class="count">{{selected.results.length}}</div>
           </div>
-          <h4 v-if="results.typecounts" class="breakdown">
-            <strong>{{results.totalResults}} Results:</strong>
-            <span class="coh_icon"></span>{{results.typecounts.c}} Study Populations
-            <span class="proj_icon"></span>{{results.typecounts.p}} Projects
+          <h4 v-if="data.typecounts" class="breakdown">
+            <strong>{{data.totalResults}} Results:</strong>
+            <span class="coh_icon"></span>{{data.typecounts.c}} Study Populations
+            <span class="proj_icon"></span>{{data.typecounts.p}} Projects
           </h4>
         </div>
         <div class="appliedP">Applied Facets:
@@ -65,12 +62,12 @@
         </div>
         <div class="result_options">
           <div>
-            <input @click="select_R" type="checkbox">
+            <input @click="all_res" type="checkbox">
             <label>Select All</label>
           </div>
           <div>
             <label>Sort:</label>
-            <select @change="getRes" v-model="results.sort">
+            <select @change="getRes" v-model="data.sort">
               <option value="resource_title">Title (A-Z)</option>
               <option value="Institution">Institution</option>
               <option value="PI">Principal Investigator</option>
@@ -80,22 +77,22 @@
           <div class="pag">
             <span @click="page" id="first">&lt;&lt;</span>
             <span @click="page" id="previous">&lt;</span>
-            <span class="main">Page {{results.page}} of {{Math.ceil(results.totalResults / results.resultsperpage)}}</span>
-            <span @click="page" id="next">&gt;</span>
+            <span class="main">Page {{data.page}} of {{Math.ceil(data.totalResults / data.resultsperpage)}}</span><!--
+         --><span @click="page" id="next">&gt;</span>
             <span @click="page" id="last">&gt;&gt;</span>
           </div>
           <div>
             <label>Show:</label>
-            <select @change="getRes" v-model="results.resultsperpage">
+            <select @change="getRes" v-model="data.resultsperpage">
               <option value="10">10</option>
               <option value="25">25</option>
             </select>
-            <label>of {{results.totalResults}}</label>
+            <label>of {{data.totalResults}}</label>
           </div>
         </div>
-        <h2 class="noResults" v-if="results.noResults">No results, Please try a different search.</h2>
+        <h2 class="noResults" v-if="!data.totalResults">No results, Please try a different search.</h2>
         <!-- Each result -->
-        <div v-else class="result" v-for="result in results.resultslist" :key="result.id">
+        <div v-else class="result" v-for="result in data.resultslist" :key="result.id">
           <input type="checkbox" v-model="selected.results" :value="result" />
           <img :src="'assets/' + result.icon + '-icon.svg'" class="lg" />
           <div class="result_box">
@@ -129,20 +126,25 @@
   </div>
   <script>
     var search = 'https://tools3dev.niehs.nih.gov/cohorts/index.cfm?do=remote.search';
-
-    function getIcon() {
-      var res = app.results.resultslist;
-      for (var ult in res) {
-        res[ult].icon = res[ult].type == 'c' ? 'cohort' : 'project'
-      }
+    // ----------------------- Replace ^ ^ ^  with -> // var search = '/cohorts/index.cdm?do=remote.search'; 
+    function getData(update_url){
+      $.ajax({
+        url: update_url,
+        success:function(data){
+          app.data = data
+          if(!app.data.totalResults){app.data.page = 0}
+          var res = app.data.resultslist
+          for (var ult in res) {
+            res[ult].icon = res[ult].type == 'c' ? 'cohort' : 'project'
+          }
+        },      
+      })  
     }
     var app = new Vue({
       el: "#app",
       data: function () {
         return {
-          search: '',
-          facets: {},
-          results: {},
+          data: {},
           selected: {
             facets: [],
             results: [],
@@ -150,115 +152,65 @@
         }
       },
       created: function () {
-        $.ajax({
-          url: search.replace(/\bsearch/gi, 'facets'),
-          success: function (data) {
-            app.facets = data
-          }
-        })
-        //app.results = _data_init_cohorts;
-        //replaces call below
-        $.ajax({
-          url: 'https://tools3dev.niehs.nih.gov/cohorts/index.cfm?do=remote.search',
-          success: function (data) {
-            app.results = data;
-            getIcon();
-          }
-        })
+        // app.results = _data_init_cohorts; //replaces f(n) below
+        getData(search);
       },
       methods: {
-        browserSync: function(x){return x.originalTarget ? x.srcElement = x.originalTarget : x.srcElement;}, 
+        browserSync: function(e){
+          var val = {};
+          val.src = e.originalTarget ? e.originalTarget : e.srcElement;
+          if(e.target.nextElementSibling){val.subs = e.target.nextElementSibling.innerText}
+          return val; 
+        }, 
+        print: function(){window.alert('Coming Soon!')},
         getCode: function(x){return x.split(',').splice(0, 1).join('')},
         getLabel: function(x){return x.split(',').splice(1, 1).join('')},
-        hasMenu: function(X){return Object.keys(X).length > 0 ? true : false},
+        hasMenu: function(x){return Object.keys(x).length > 0 ? true : false},
         trimmed: function(x){return x.length > 74 ? x.slice(0, 67) + '...' : x},
-        toggleMenu: function(e){
-          this.browserSync(e);
-          $(document.getElementById(e.srcElement.innerText)).toggle(200);
-        },
-        page: function (e) {
-          this.browserSync(e);
-          if (e.srcElement.id == 'first') {
-            this.results.page = 1
-          }
-          if (e.srcElement.id == 'previous') {
-            return this.results.page <= 1 ? this.results.page = 1 : this.results.page--
-          }
-          if (e.srcElement.id == 'next') {
-            var lastPage = Math.ceil(this.results.totalResults / this.results.resultsperpage);
-            if(this.results.page >= lastPage){this.results.page = lastPage}
-            else{this.results.page++}
-          }
-          if (e.srcElement.id == 'last') {
-            this.results.page = Math.ceil(this.results.totalResults / this.results.resultsperpage)
+        toggleMenu: function(e){$(document.getElementById(this.browserSync(e).src.innerText)).toggle(200)},
+        page: function(e) {
+          var id = this.browserSync(e).src.id;
+          switch(id){
+            case'first':this.data.page=1; break;
+            case'next': this.data.page++; break;
+            case'previous': this.data.page--; break;
+            case'last': this.data.page = Math.ceil(this.data.totalResults / this.data.resultsperpage)
           }
           this.getRes();
         },
-        select_F: function (e) {
-          this.browserSync(e);
-          var sfacets = this.selected.facets;
-          for (var x in e.path[1].lastChild.children) {
-            var subF = e.path[1].lastChild.children[x].firstChild;
-            if (subF) {
-              e.srcElement.checked ? sfacets.push(subF.value) : sfacets.splice(sfacets.indexOf(subF.value), 1)
-            }
+        select_F: function(e){
+          var data = this.browserSync(e);
+          var sFacets = this.selected.facets;
+          var parent = document.getElementById(data.subs);
+          $(document.getElementById(this.browserSync(e).src.nextElementSibling.innerText)).toggle(200);
+          for(var child in parent.children){
+            var kid = parent.children[child].firstChild;
+            if(kid){data.src.checked ? sFacets.push(kid.value) : sFacets.splice(sFacets.indexOf(kid.value),1)}
           }
-          this.getRes();
+          this.getRes(); 
         },
-        select_R: function (e) {
-          this.browserSync(e);
-          e.srcElement.checked ? this.selected.results = this.results.resultslist : this.selected.results = []
-        },
-        appliedFacets: function () {
+        all_res:function(e){this.selected.results = this.browserSync(e).src.checked ? this.data.resultslist : []},
+        appliedFacets: function(){
           var y = [];
           var sfacets = this.selected.facets;
-          for (var i in sfacets) {
-            y.push(' ' + this.getLabel(sfacets[i]));
-          }
+          for(var i in sfacets){y.push(this.getLabel(sfacets[i]))}
           return y.toString();
         },
-        getRes: function () {
+        getRes: function(){
           var arg = [];
-          var results = this.results;
-          var facets = this.selected.facets;
           var query = '';
-          var page = '&page=';
-          for (var item in facets) {
-            arg.push(this.getCode(facets[item]))
-          }
-          if (this.search != '') {
-            query += '&keyword=' + this.search
-          }
-          if (results.sort != '') {
-            query += '&sort=' + results.sort;
-          }
-          if (results.resultsperpage != '') {
-            query += '&resultsperpage=' + results.resultsperpage;
-            //page = '&page=' + 1;
-          } else {
-            page += this.results.page
-          }
-          if (arg.join() != '') {
-            query += '&qpParamvals=' + arg.join();
-            page += 1
-          } else {
-            page += this.results.page
-          }
-          $.ajax({
-            url: search + query + page,
-            success: function (data) {
-              app.results = data;
-              getIcon()
-              if (!app.results.totalResults) {
-                app.results.page = 0
-                app.results.noResults = true;
-              }
-            }
-          })
+          var facets = this.selected.facets;
+          var page = '&page=' + this.data.page;
+          for(var item in facets){arg.push(this.getCode(facets[item]))}
+          if(this.data.keyword){query+= '&keyword=' + this.data.keyword}
+          if(this.data.sort){query+= '&sort=' + this.data.sort}
+          if(this.data.resultsperpage){query+= '&resultsperpage=' + this.data.resultsperpage}
+          if(arg.join()){page = '&page=1'; query += '&qpParamvals=' + arg.join()}
+          var q = search + query + page;
+          getData(q);
         },
       }
     })
   </script>
 </body>
-
 </html>

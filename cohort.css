@@ -164,14 +164,15 @@ body {
 }
 
 .results .resultHead .print .printPDF {
-  background-color: white;
+  background-color: #2970bc;
   border: 1px solid gray;
+  color: white;
   border-right: none;
   padding: .5em;
 }
 
 .results .resultHead .print .printPDF:hover {
-  background-color: silver;
+  background-color: #1090bc;
 }
 
 .results .resultHead .print .printPDF span {
@@ -179,12 +180,10 @@ body {
 }
 
 .results .resultHead .print .count {
-  background-color: #2970bc;
+  background-color: white;
   width: 30px;
   display: inline-block;
-  color: white;
   text-align: center;
-  padding: 3.1% 0;
 }
 
 .results .resultHead .breakdown {
@@ -276,7 +275,7 @@ body {
   display: inline-block;
   border: 1px solid black;
   border-left: none;
-  font-size: 1em;
+  font-size: .85em;
 }
 
 .pag span {
@@ -290,5 +289,13 @@ body {
 .pag .main {
   font-weight: normal;
   cursor: auto;
+  background-color: #e2e2e2;
+}
+
+.un {
+  -moz-user-select: -moz-none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 /*# sourceMappingURL=cohort.css.map */
