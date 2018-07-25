@@ -2,13 +2,13 @@
 <html>
 
 <head>
-  <title>Cohort</title>
+  <title>Vue-Cohort</title>
   <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
   <link rel="stylesheet" href="cohort.css" />
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt"
-    crossorigin="anonymous">
+  crossorigin="anonymous">
   <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-    crossorigin="anonymous"></script>
+  crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -16,7 +16,7 @@
     <div class="wrapper">
       <div class="filters">
         <div class="filters_upper">
-          <input @keyup="getRes" v-model="data.keyword" placeholder="Enter Search Term" class="searchBox" type="text" />
+          <input @keyup="getRes" v-model="search" placeholder="Enter Search Term" class="searchBox" type="text" />
         </div>
         <button @click="selected.facets=[]" class="clear">Clear Filters</button>
         <div class="parentFacet" v-for="facet in data.facets" :key="facet.id">
@@ -25,17 +25,29 @@
             <template v-for="sub in facet.OPTIONS">
               <div v-if="sub.OPTION_LABEL" :key="sub.id">
                 <!--no submenu-->
-                  <input @change="getRes" type="checkbox" :value="sub.OPTION_CODE + ',' + sub.OPTION_LABEL" v-model="selected.facets" />
+                <template v-if="!sub.COUNT">
+                    <input type="checkbox" disabled/>
+                    <label class="zero" >{{sub.OPTION_LABEL}} ({{sub.COUNT}})</label>
+                </template>
+                <template v-else><input @change="getRes" type="checkbox" :value="sub.OPTION_CODE + ',' + sub.OPTION_LABEL" v-model="selected.facets" />
                   <label>{{sub.OPTION_LABEL}} ({{sub.COUNT}})</label>
+                </template>
+                 
                
               </div>
               <div class="subFacet" @click="toggleMenu" v-else-if="hasMenu(sub.OPTIONS)">
                 <input type="checkbox" @change="select_F" />
-                <span class="un subTitle caret">{{sub.FACET_LABEL}} </span>
+                <span class="un subTitle caret">{{sub.FACET_LABEL}}</span>
                 <div :id="sub.FACET_LABEL" class="hide">
                   <div class="kidFacet" v-for="kid in sub.OPTIONS" :key="kid.id">
-                    <input @change="getRes" v-model="selected.facets" type="checkbox" :value="kid.OPTION_CODE + ',' + kid.OPTION_LABEL"/>
-                    <label>{{kid.OPTION_LABEL}} ({{kid.COUNT}})</label>
+                    <template v-if="!kid.COUNT">
+                      <input type="checkbox" disabled/>
+                      <label class="zero">{{kid.OPTION_LABEL}} ({{kid.COUNT}})</label>
+                    </template>
+                    <template v-else>
+                      <input @change="getRes" v-model="selected.facets" type="checkbox" :value="kid.OPTION_CODE + ',' + kid.OPTION_LABEL"/>
+                      <label>{{kid.OPTION_LABEL}} ({{kid.COUNT}})</label>
+                    </template>
                   </div>
                 </div>
               </div>
@@ -45,7 +57,11 @@
       </div>
 
       <div class="results">
-        <h2>Search Results for:{{data.keyword}}</h2>
+      <h2>
+        Search Results for:
+        <span v-if="search">{{search}}</span>
+        <span v-else>{{data.keyword}}</span>
+      </h2>
         <div class="resultHead">
           <div class="print">
             <button @click="print" class="printPDF">Print Selected Items as PDF<span class="far fa-file-pdf"></span></button>
@@ -90,6 +106,7 @@
             <label>of {{data.totalResults}}</label>
           </div>
         </div>
+        <!-- <div id="loader">LOADING...</div> -->
         <h2 class="noResults" v-if="!data.totalResults">No results, Please try a different search.</h2>
         <!-- Each result -->
         <div v-else class="result" v-for="result in data.resultslist" :key="result.id">
@@ -128,13 +145,15 @@
     var search = 'https://tools3dev.niehs.nih.gov/cohorts/index.cfm?do=remote.search';
     // ----------------------- Replace ^ ^ ^  with -> // var search = '/cohorts/index.cdm?do=remote.search'; 
     function getData(update_url){
+      $(document).ajaxStart(function(){$("#loader").show()});
+      $(document).ajaxComplete(function(){$("#loader").hide()});
       $.ajax({
         url: update_url,
         success:function(data){
           app.data = data
           if(!app.data.totalResults){app.data.page = 0}
           var res = app.data.resultslist
-          for (var ult in res) {res[ult].icon = res[ult].type == 'c' ? 'cohort' : 'project'}
+          for(var ult in res){res[ult].icon = res[ult].type == 'c' ? 'cohort' : 'project'}
         },      
       })  
     }
@@ -142,6 +161,7 @@
       el: "#app",
       data:function(){
         return {
+          search: '',
           data: {},
           selected: {
             facets: [],
@@ -149,10 +169,10 @@
           }
         }
       },
-      created: function () {getData(search);// app.results = _data_init_cohorts; //replaces f(n) 
+      created: function() {getData(search);// app.results = _data_init_cohorts; //replaces f(n) 
       },
       methods: {
-        browserSync: function(e){
+        unify: function(e){
           var val = {};
           val.src = e.originalTarget ? e.originalTarget : e.srcElement;
           if(e.target.nextElementSibling){val.subs = e.target.nextElementSibling.innerText}
@@ -163,11 +183,18 @@
         getLabel: function(x){return x.split(',').splice(1, 1).join('')},
         hasMenu: function(x){return Object.keys(x).length > 0 ? true : false},
         trimmed: function(x){return x.length > 74 ? x.slice(0, 67) + '...' : x},
-        toggleMenu: function(e){$(document.getElementById(this.browserSync(e).src.innerText)).toggle(200)},
-        all_res:function(e){this.selected.results = this.browserSync(e).src.checked ? this.data.resultslist : []},
+        toggleMenu: function(e){
+
+          //---------- 
+          var src = this.unify(e).src;
+          $(src).toggleClass("rot8");
+          $(document.getElementById(src.innerText)).toggle(200);
+          //----------
+
+        },
+        all_res:function(e){this.selected.results = this.unify(e).src.checked ? this.data.resultslist : []},
         page: function(e) {
-          var id = this.browserSync(e).src.id;
-          switch(id){
+          switch(this.unify(e).src.id) {
             case'first':this.data.page=1; break;
             case'next': this.data.page++; break;
             case'previous': this.data.page--; break;
@@ -178,14 +205,23 @@
         appliedFacets: function(){
           var y = [];
           var sfacets = this.selected.facets;
-          for(var i in sfacets){y.push(this.getLabel(sfacets[i]))}
+          for(var i in sfacets){
+            if(this.getLabel(sfacets[i])){
+              y.push(this.getLabel(sfacets[i]))
+            }
+          }
           return y.toString();
         },
         select_F: function(e){
-          var data = this.browserSync(e);
+          var data = this.unify(e);
           var sFacets = this.selected.facets;
           var parent = document.getElementById(data.subs);
+
+          // --------------------
+          $(data.src.nextElementSibling).toggleClass("rot8");
           $(document.getElementById(data.src.nextElementSibling.innerText)).toggle(200);
+          // --------------------
+
           for(var child in parent.children){
             var kid = parent.children[child].firstChild;
             if(kid){data.src.checked ? sFacets.push(kid.value) : sFacets.splice(sFacets.indexOf(kid.value),1)}
@@ -198,7 +234,7 @@
           var facets = this.selected.facets;
           var page = '&page=' + this.data.page;
           for(var item in facets){arg.push(this.getCode(facets[item]))}
-          if(this.data.keyword){query+= '&keyword=' + this.data.keyword}
+          if(this.search){query+= '&keyword=' + this.search}
           if(this.data.sort){query+= '&sort=' + this.data.sort}
           if(this.data.resultsperpage){query+= '&resultsperpage=' + this.data.resultsperpage}
           if(arg.join()){page = '&page=1'; query += '&qpParamvals=' + arg.join()}
