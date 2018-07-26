@@ -10,43 +10,54 @@
   <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
   crossorigin="anonymous"></script>
 </head>
-
 <body>
   <div id="app">
     <div class="wrapper">
       <div class="filters">
-        <div class="filters_upper">
-          <input @keyup="getRes" v-model="search" placeholder="Enter Search Term" class="searchBox" type="text" />
-        </div>
+        <input @keyup="getRes" v-model="search" placeholder="Enter Search Term" class="searchBox" type="text" />
+        <hr id="hr"/>
         <button @click="selected.facets=[]" class="clear">Clear Filters</button>
         <div class="parentFacet" v-for="facet in data.facets" :key="facet.id">
           <h4 @click="toggleMenu" class="un parentTitle caret" :key="facet.id">{{facet.FACET_LABEL}}</h4>
           <div class="hide" :id="facet.FACET_LABEL">
             <template v-for="sub in facet.OPTIONS">
               <div v-if="sub.OPTION_LABEL" :key="sub.id">
-                <!--no submenu-->
-                <template v-if="!sub.COUNT">
-                    <input type="checkbox" disabled/>
-                    <label class="zero" >{{sub.OPTION_LABEL}} ({{sub.COUNT}})</label>
-                </template>
-                <template v-else><input @change="getRes" type="checkbox" :value="sub.OPTION_CODE + ',' + sub.OPTION_LABEL" v-model="selected.facets" />
+                <template v-if="sub.COUNT">
+                  <div class="facet__checkbx">
+                    <input @change="getRes" type="checkbox" :value="sub.OPTION_CODE + ',' + sub.OPTION_LABEL" v-model="selected.facets" :id="sub.OPTION_LABEL"/>
+                    <label :for="sub.OPTION_LABEL"></label>
+                  </div>
                   <label>{{sub.OPTION_LABEL}} ({{sub.COUNT}})</label>
                 </template>
-                 
-               
+                <template v-else>
+                  <div class="facet__checkbx">
+                    <input type="checkbox" :id="sub.OPTION_LABEL" disabled/>
+                    <label :for="sub.OPTION_LABEL"></label>  
+                  </div>
+                  <label class="zero" >{{sub.OPTION_LABEL}} ({{sub.COUNT}})</label>
+                </template>
               </div>
-              <div class="subFacet" @click="toggleMenu" v-else-if="hasMenu(sub.OPTIONS)">
-                <input type="checkbox" @change="select_F" />
-                <span class="un subTitle caret">{{sub.FACET_LABEL}}</span>
+              <div @click="toggleMenu" class="subFacet" v-else-if="hasMenu(sub.OPTIONS)">
+                <div class="facet__checkbx">
+                  <input :id="'CK_' + sub.FACET_LABEL" @change="select_F" type="checkbox"/>
+                  <label :for="'CK_'+ sub.FACET_LABEL" ></label>
+                </div>
+                <label class="un subTitle caret">{{sub.FACET_LABEL}}</label>
                 <div :id="sub.FACET_LABEL" class="hide">
                   <div class="kidFacet" v-for="kid in sub.OPTIONS" :key="kid.id">
-                    <template v-if="!kid.COUNT">
-                      <input type="checkbox" disabled/>
-                      <label class="zero">{{kid.OPTION_LABEL}} ({{kid.COUNT}})</label>
+                    <template v-if="kid.COUNT">
+                      <div class="facet__checkbx">
+                        <input @change="getRes" v-model="selected.facets" type="checkbox" :value="kid.OPTION_CODE + ',' + kid.OPTION_LABEL" :id="kid.OPTION_LABEL"/>
+                        <label :for="kid.OPTION_LABEL"></label>
+                      </div>
+                      <label>{{kid.OPTION_LABEL}} ({{kid.COUNT}})</label>
                     </template>
                     <template v-else>
-                      <input @change="getRes" v-model="selected.facets" type="checkbox" :value="kid.OPTION_CODE + ',' + kid.OPTION_LABEL"/>
-                      <label>{{kid.OPTION_LABEL}} ({{kid.COUNT}})</label>
+                      <div class="facet__checkbx">
+                        <input type="checkbox" :id="kid.OPTION_LABEL" disabled/>
+                        <label :for="kid.OPTION_LABEL"></label>  
+                      </div>
+                      <label class="zero">{{kid.OPTION_LABEL}} ({{kid.COUNT}})</label>
                     </template>
                   </div>
                 </div>
@@ -55,7 +66,6 @@
           </div>
         </div>
       </div>
-
       <div class="results">
       <h2>
         Search Results for:
@@ -64,8 +74,16 @@
       </h2>
         <div class="resultHead">
           <div class="print">
-            <button @click="print" class="printPDF">Print Selected Items as PDF<span class="far fa-file-pdf"></span></button>
-            <div class="count">{{selected.results.length}}</div>
+            <template v-if="!selected.results.length">
+              <button id="none" class="printPDF">Print Selected Items as a PDF
+              <span class="far fa-file-pdf pdf-icon"></span>
+              <div class="count">{{selected.results.length}}</div></button>
+            </template>
+            <template v-else>
+              <button @click="print" class="printPDF">Print Selected Items as a PDF
+              <span class="far fa-file-pdf pdf-icon"></span>
+              <div class="count">{{selected.results.length}}</div></button>
+            </template>  
           </div>
           <h4 v-if="data.typecounts" class="breakdown">
             <strong>{{data.totalResults}} Results:</strong>
@@ -78,12 +96,15 @@
         </div>
         <div class="result_options">
           <div>
-            <input @click="all_res" type="checkbox">
-            <label>Select All</label>
+            <div id="select_all" class="result__checkbx">
+              <input @click="all_res" type="checkbox" id="res_cbx"/>
+              <label for="res_cbx"></label>
+            </div>
+            <label id="all_label">Select All</label>
           </div>
           <div>
             <label>Sort:</label>
-            <select @change="getRes" v-model="data.sort">
+            <select @change="getRes">
               <option value="resource_title">Title (A-Z)</option>
               <option value="Institution">Institution</option>
               <option value="PI">Principal Investigator</option>
@@ -99,54 +120,47 @@
           </div>
           <div>
             <label>Show:</label>
-            <select @change="getRes" v-model="data.resultsperpage">
+            <select id="res_PP" @change="getRes" v-model="data.resultsperpage">
               <option value="10">10</option>
               <option value="25">25</option>
             </select>
             <label>of {{data.totalResults}}</label>
           </div>
         </div>
-        <!-- <div id="loader">LOADING...</div> -->
+        <div class="result-wrap">
+          <div id="loader"><div class="loader fas fa-spinner"></div>
+        </div>
         <h2 class="noResults" v-if="!data.totalResults">No results, Please try a different search.</h2>
         <!-- Each result -->
         <div v-else class="result" v-for="result in data.resultslist" :key="result.id">
-          <input type="checkbox" v-model="selected.results" :value="result" />
+          <div class="result__checkbx">
+            <input type="checkbox" :id="result.grant_number" v-model="selected.results" :value="result"/>
+            <label :for="result.grant_number"></label>
+          </div>
           <img :src="'assets/' + result.icon + '-icon.svg'" class="lg" />
           <div class="result_box">
-            <h3 class="res_title">{{trimmed(result.resource_title)}}</h3>
-            <span class="info">Principal Investigator:
-              <span> {{trimmed(result.pi)}}</span>
-            </span>
-            <span class="info">Institution:
-              <span> {{result.institution}}</span>
-            </span>
+            <h3 class="res_title">{{result.resource_title}}</h3>
+            <span class="info">Principal Investigator:<span> {{result.pi}}</span></span>
+            <span class="info">Institution:<span> {{result.institution}}</span></span>
             <template v-if="result.type == 'c'">
-              <span class="info">Location:
-                <span> {{result.location}}</span>
-              </span>
-              <span class="info">Number of Participants:
-                <span> {{result.number_participants}}</span>
-              </span>
+              <span class="info">Location:<span> {{result.location}}</span></span>
+              <span class="info">Number of Participants:<span> {{result.number_participants}}</span></span>
             </template>
             <template v-else>
-              <span class="info">Study Populations:
-                <span> {{trimmed(result.top_cohort_name)}}</span>
-              </span>
-              <span class="info">Grant Number:
-                <span> {{result.grant_number}}</span>
-              </span>
+              <span class="info">Study Populations:<span> {{result.top_cohort_name}}</span></span>
+              <span class="info">Grant Number:<span> {{result.grant_number}}</span></span>
             </template>
           </div>
         </div>
+      </div>
       </div>
     </div>
   </div>
   <script>
     var search = 'https://tools3dev.niehs.nih.gov/cohorts/index.cfm?do=remote.search';
-    // ----------------------- Replace ^ ^ ^  with -> // var search = '/cohorts/index.cdm?do=remote.search'; 
+    // var search = '/cohorts/index.cdm?do=remote.search'; 
     function getData(update_url){
       $(document).ajaxStart(function(){$("#loader").show()});
-      $(document).ajaxComplete(function(){$("#loader").hide()});
       $.ajax({
         url: update_url,
         success:function(data){
@@ -155,7 +169,8 @@
           var res = app.data.resultslist
           for(var ult in res){res[ult].icon = res[ult].type == 'c' ? 'cohort' : 'project'}
         },      
-      })  
+      })
+      $(document).ajaxComplete(function(){$("#loader").hide()}); 
     }
     var app = new Vue({
       el: "#app",
@@ -169,20 +184,17 @@
           }
         }
       },
-      created: function() {getData(search);// app.results = _data_init_cohorts; //replaces f(n) 
-      },
+      created: getData(search), // this.data = _data_init_cohorts;
       methods: {
         unify: function(e){
           var val = {};
           val.src = e.originalTarget ? e.originalTarget : e.srcElement;
-          if(e.target.nextElementSibling){val.subs = e.target.nextElementSibling.innerText}
           return val; 
         }, 
         print: function(){window.alert('Coming Soon!')},
         getCode: function(x){return x.split(',').splice(0, 1).join('')},
         getLabel: function(x){return x.split(',').splice(1, 1).join('')},
         hasMenu: function(x){return Object.keys(x).length > 0 ? true : false},
-        trimmed: function(x){return x.length > 74 ? x.slice(0, 67) + '...' : x},
         toggleMenu: function(e){
 
           //---------- 
@@ -213,18 +225,15 @@
           return y.toString();
         },
         select_F: function(e){
-          var data = this.unify(e);
           var sFacets = this.selected.facets;
-          var parent = document.getElementById(data.subs);
-
-          // --------------------
-          $(data.src.nextElementSibling).toggleClass("rot8");
-          $(document.getElementById(data.src.nextElementSibling.innerText)).toggle(200);
-          // --------------------
-
-          for(var child in parent.children){
-            var kid = parent.children[child].firstChild;
-            if(kid){data.src.checked ? sFacets.push(kid.value) : sFacets.splice(sFacets.indexOf(kid.value),1)}
+          $(e.target.parentNode.nextElementSibling).toggleClass('rot8');
+          var menu = document.getElementById(e.target.id.slice(3));
+          $(menu).toggle(200);
+          for(var kid in menu.children){
+            if(menu.children[kid].firstChild){
+              var cur_kid = menu.children[kid].firstChild;
+              e.target.checked ? sFacets.push(cur_kid.firstChild.value) : sFacets.splice(sFacets.indexOf(cur_kid.firstChild.value),1)
+            }
           }
           this.getRes(); 
         },

@@ -1,7 +1,13 @@
 $cohort_icon: 'assets/cohort-icon.svg';
 $project_icon: 'assets/Project-icon.svg';
+$primary: #355E96;
 body {
   background: linear-gradient(to left,#ba5370, #f4e2d8);
+}
+
+#hr {
+  height: 2px;
+  background-color: #aaa;
 }
 
 #app {
@@ -11,6 +17,86 @@ body {
   text-align: center;
   color: #2c3e50;
   padding: 60px .5em;
+}
+
+#select_all{
+  vertical-align: unset;
+}
+#all_label {
+  vertical-align: middle;
+}
+
+.facet__checkbx {
+  display: inline-block;
+  vertical-align: top;
+  width: 25px;
+  position: relative;
+
+  label {
+    user-select: none;
+    cursor: pointer;
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    left: 0;
+    background: white;
+    border:1px solid #ddd;
+    border-radius: 5px;
+    &:after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 4px;
+      background: transparent;
+      top: 4px;
+      left: 3px;
+      border: 1px solid $primary;
+      border-top: none;
+      border-right: none;
+      transform: rotate(-50deg);
+      opacity:0;
+    }
+  }
+  input[type=checkbox]:checked + label:after {
+    opacity: 1;
+  }
+}
+
+
+.result__checkbx {
+  display: inline-block;
+  vertical-align: top;
+  width: 25px;
+  position: relative;
+
+  label {
+    user-select: none;
+    cursor: pointer;
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 0;
+    background: white;
+    border:1px solid #ddd;
+    border-radius: 5px;
+    &:after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 4px;
+      background: transparent;
+      top: 4px;
+      left: 3px;
+      border: 3px solid $primary;
+      border-top: none;
+      border-right: none;
+      transform: rotate(-50deg);
+      opacity:0;
+    }
+  }
+  input[type=checkbox]:checked + label:after {
+    opacity: 1;
+  }
 }
 
 .wrapper {
@@ -38,9 +124,11 @@ body {
 }
 
 .parentTitle {
-  border-bottom: 1px solid silver;
+  border-bottom: 2px solid lightgray;
   font-weight: bold;
+  padding-bottom: .25em;
   margin: .25em 0;
+  color: $primary;
 }
 
 .zero{
@@ -59,19 +147,23 @@ body {
   }
 }
 
+#res_PP {
+  border-radius: 4px;
+  padding: 3px;
+}
+
 .rot8::after {
   transform: rotate(90deg);
 }
 
 .subTitle {
   font-family: sans-serif;
-  margin-left: .5em;
-  font-size: .95em;
+  font-size: .8em;
   font-weight: bold;
 }
 
 .kidFacet {
-  margin-left: 1em;
+  margin-left: 2em;
   list-style: none;
   font-size: .8em;
 }
@@ -85,7 +177,7 @@ body {
   padding: .25em;
   flex: 1;
   height: 100%;
-  max-width: 20%; // NO IE 
+  max-width: 25%; // NO IE 
 }
 
 .clear{
@@ -97,40 +189,43 @@ body {
   box-sizing: border-box;
   text-align: center;
   &:hover {
-    background-color: #2970bc;
+    background-color: $primary;
     color:white;
   }
 }
 
-.filters_upper {
-  border-bottom: 3px solid gray;
-  padding-bottom: .5em;
-  margin-bottom: .5em;
-  .search {
-    display: inline-table;
-    width: 17%;
-    position: relative;
-    vertical-align: top;
-    cursor: pointer;
-    height: 35px;
-    background-color: #2970bc;
-    &:hover {
-      background-color: #4290e4;
-    }
+.search {
+  display: inline-table;
+  width: 17%;
+  position: relative;
+  vertical-align: top;
+  cursor: pointer;
+  height: 35px;
+  background-color: $primary;
+  &:hover {
+    background-color: #4290e4;
   }
 }
 
 #loader {
   position: absolute;
   font-size: 2em;
-  background-color: rgba(155,155,155,0.3);
-  width: 100%;
-  height: 100vw;
-  top: 0;
+  background-color: white;
+  top:0;
   left: 0;
   right: 0;
+  bottom:0;
   text-align: center;
-  bottom: 0;
+}
+
+.loader {
+  animation-duration: 1.5s;
+  animation-iteration-count: 15;
+  animation-name: loading;
+}
+
+@keyframes loading {
+  100% {transform: rotate(360deg)}
 }
 
 .searchBox {
@@ -140,12 +235,20 @@ body {
   height: 35px;
 }
 
+.result-wrap {
+  position: relative;
+}
+
 .results {
+  position: relative;
   flex: 3;
   padding: 0 2em;
   margin-left: 2em;
   .noResults {
+    border-top: 1px solid black; 
+    padding-top: 1em;
     text-align: center;
+    margin-top: .25em;
   }
   .appliedP {
     font-size: .9em;
@@ -159,28 +262,33 @@ body {
     justify-content: space-between;
     align-items: baseline;
     .print {
-      display: table;
+      display: inline-block;
       position: relative;
-      height: 100%;
+      height: 100%;  
+      #none {
+        cursor:auto;
+        opacity: 0.5;
+      }
       .printPDF {
-        background-color: #2970bc;
-        border: 1px solid gray;
+        cursor: pointer;
+        background-color: $primary;
+        border: 1px solid $primary;
         color:white;
-        
-        border-right: none;
-        padding: .5em;
-        &:hover {
-          background-color: #1090bc;
-        }
-        span {
+        padding: 0 0 0 .5em;
+        .pdf-icon {
+          font-size:1.2em;
           margin-left: 5px;
+          padding-right:0.5em;
         }
       }
       .count {
         background-color: white;
-        width: 30px;
+        color: $primary;
+        width: 35px;
         display:inline-block;
         text-align: center;
+        padding: .4em 0;
+        font-size:1.25em;
       }
     }
     .breakdown {
