@@ -1,183 +1,221 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html>
 
 <head>
-  <title>Vue-Cohort</title>
+  <title>Vue // Cohort</title>
   <script src="https://cdn.jsdelivr.net/npm/vue@2.5.16/dist/vue.js"></script>
   <link rel="stylesheet" href="cohort.css" />
-  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt"
-  crossorigin="anonymous">
-  <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
-  crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.0/css/all.css" 
+    integrity="sha384-lKuwvrZot6UHsBSfcMvOkWwlCMgc0TaWr+30HWe3a4ltaBwTZhyTEggF5tJv8tbt" crossorigin="anonymous"/>
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js" 
+    integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
 </head>
 <body>
-  <div id="app">
-    <div class="wrapper">
-      <div class="filters">
-        <input @keyup="getRes" v-model="search" placeholder="Enter Search Term" class="searchBox" type="text" />
-        <hr id="hr"/>
-        <button @click="selected.facets=[]" class="clear">Clear Filters</button>
-        <div class="parentFacet" v-for="facet in data.facets" :key="facet.id">
-          <h4 @click="toggleMenu" class="un parentTitle caret" :key="facet.id">{{facet.FACET_LABEL}}</h4>
-          <div class="hide" :id="facet.FACET_LABEL">
-            <template v-for="sub in facet.OPTIONS">
-              <div v-if="sub.OPTION_LABEL" :key="sub.id">
-                <template v-if="sub.COUNT">
-                  <div class="facet__checkbx">
-                    <input @change="getRes" type="checkbox" :value="sub.OPTION_CODE + ',' + sub.OPTION_LABEL" v-model="selected.facets" :id="sub.OPTION_LABEL"/>
-                    <label :for="sub.OPTION_LABEL"></label>
-                  </div>
-                  <label>{{sub.OPTION_LABEL}} ({{sub.COUNT}})</label>
-                </template>
-                <template v-else>
-                  <div class="facet__checkbx">
-                    <input type="checkbox" :id="sub.OPTION_LABEL" disabled/>
-                    <label :for="sub.OPTION_LABEL"></label>  
-                  </div>
-                  <label class="zero" >{{sub.OPTION_LABEL}} ({{sub.COUNT}})</label>
-                </template>
-              </div>
-              <div @click="toggleMenu" class="subFacet" v-else-if="hasMenu(sub.OPTIONS)">
-                <div class="facet__checkbx">
-                  <input :id="'CK_' + sub.FACET_LABEL" @change="select_F" type="checkbox"/>
-                  <label :for="'CK_'+ sub.FACET_LABEL" ></label>
-                </div>
-                <label class="un subTitle caret">{{sub.FACET_LABEL}}</label>
-                <div :id="sub.FACET_LABEL" class="hide">
-                  <div class="kidFacet" v-for="kid in sub.OPTIONS" :key="kid.id">
-                    <template v-if="kid.COUNT">
-                      <div class="facet__checkbx">
-                        <input @change="getRes" v-model="selected.facets" type="checkbox" :value="kid.OPTION_CODE + ',' + kid.OPTION_LABEL" :id="kid.OPTION_LABEL"/>
-                        <label :for="kid.OPTION_LABEL"></label>
-                      </div>
-                      <label>{{kid.OPTION_LABEL}} ({{kid.COUNT}})</label>
-                    </template>
-                    <template v-else>
-                      <div class="facet__checkbx">
-                        <input type="checkbox" :id="kid.OPTION_LABEL" disabled/>
-                        <label :for="kid.OPTION_LABEL"></label>  
-                      </div>
-                      <label class="zero">{{kid.OPTION_LABEL}} ({{kid.COUNT}})</label>
-                    </template>
-                  </div>
-                </div>
-              </div>
-            </template>
+
+<div id="app">
+  <!-- Left (Filters) column -->
+<div class="filters">
+  <input class="filters__search" type="text" placeholder="Enter Search Term" @keyup="getRes" v-model="search"/>
+  <hr/>
+  <button class="filters__clearbtn" @click="selected.facets=[]">Clear Filters</button>
+  <div class="filters__parent" v-for="facet in data.facets" :key="facet.id">
+    <h4 class="filters__parentTitle" @click="handleMenu" :key="facet.id">{{facet.FACET_LABEL}}</h4>
+      <div class="filters__subMenu" :id="facet.FACET_LABEL">
+      <template v-for="sub in facet.OPTIONS">
+        <div class="filters__subMenu-item" v-if="sub.OPTION_LABEL" :key="sub.id">
+        <template v-if="sub.COUNT">
+          <div class="filters__checkbox">
+            <input :id="sub.OPTION_LABEL" type="checkbox" :value="sub.OPTION_CODE + ',' + sub.OPTION_LABEL" @change="getRes" v-model="selected.facets" />
+            <label :for="sub.OPTION_LABEL"></label>
           </div>
+          <label>{{sub.OPTION_LABEL}} ({{sub.COUNT}})</label>
+        </template>
+        <template v-else>
+        <div class="filters__checkbox">
+          <input :id="sub.OPTION_LABEL" type="checkbox" disabled/>
+          <label :for="sub.OPTION_LABEL"></label>
         </div>
-      </div>
-      <div class="results">
-      <h2>
-        Search Results for:
-        <span v-if="search">{{search}}</span>
-        <span v-else>{{data.keyword}}</span>
-      </h2>
-        <div class="resultHead">
-          <div class="print">
-            <template v-if="!selected.results.length">
-              <button id="none" class="printPDF">Print Selected Items as a PDF
-              <span class="far fa-file-pdf pdf-icon"></span>
-              <div class="count">{{selected.results.length}}</div></button>
+        <label class="filters__zero">{{sub.OPTION_LABEL}} ({{sub.COUNT}})</label>
+        </template>
+        </div>
+        <div class="filters__sub" @click="handleMenu" v-else-if="hasMenu(sub.OPTIONS)">
+          <div class="filters__checkbox">
+            <input :id="'F_' + sub.FACET_LABEL" @change="getAllChildren" type="checkbox" />
+            <label :for="'F_'+ sub.FACET_LABEL"></label>
+          </div>
+          <label class="filters__subTitle">{{sub.FACET_LABEL}}</label>
+          <div :id="sub.FACET_LABEL" class="filters__kidMenu">
+            <div class="filters__kid" v-for="kid in sub.OPTIONS" :key="kid.id">
+            <template v-if="kid.COUNT">
+              <div class="filters__checkbox--kid">
+                <input @change="getRes" v-model="selected.facets" type="checkbox" :value="kid.OPTION_CODE + ',' + kid.OPTION_LABEL" :id="kid.OPTION_LABEL"/>
+                <label :for="kid.OPTION_LABEL"></label>
+              </div>
+              <label>{{kid.OPTION_LABEL}} ({{kid.COUNT}})</label>
             </template>
             <template v-else>
-              <button @click="print" class="printPDF">Print Selected Items as a PDF
-              <span class="far fa-file-pdf pdf-icon"></span>
-              <div class="count">{{selected.results.length}}</div></button>
-            </template>  
-          </div>
-          <h4 v-if="data.typecounts" class="breakdown">
-            <strong>{{data.totalResults}} Results:</strong>
-            <span class="coh_icon"></span>{{data.typecounts.c}} Study Populations
-            <span class="proj_icon"></span>{{data.typecounts.p}} Projects
-          </h4>
-        </div>
-        <div class="appliedP">Applied Facets:
-          <span class="appliedC">{{appliedFacets()}}</span>
-        </div>
-        <div class="result_options">
-          <div>
-            <div id="select_all" class="result__checkbx">
-              <input @click="all_res" type="checkbox" id="res_cbx"/>
-              <label for="res_cbx"></label>
+              <div class="filters__checkbox--kid">
+                <input type="checkbox" :id="kid.OPTION_LABEL" disabled/>
+                <label :for="kid.OPTION_LABEL"></label>
+              </div>
+              <label class="filters__zero">{{kid.OPTION_LABEL}} ({{kid.COUNT}})</label>
+            </template>
             </div>
-            <label id="all_label">Select All</label>
-          </div>
-          <div>
-            <label>Sort:</label>
-            <select @change="getRes">
-              <option value="resource_title">Title (A-Z)</option>
-              <option value="Institution">Institution</option>
-              <option value="PI">Principal Investigator</option>
-              <option value="Type">Type</option>
-            </select>
-          </div>
-          <div class="pag">
-            <span @click="page" id="first">&lt;&lt;</span>
-            <span @click="page" id="previous">&lt;</span>
-            <span class="main">Page {{data.page}} of {{Math.ceil(data.totalResults / data.resultsperpage)}}</span><!--
-         --><span @click="page" id="next">&gt;</span>
-            <span @click="page" id="last">&gt;&gt;</span>
-          </div>
-          <div>
-            <label>Show:</label>
-            <select id="res_PP" @change="getRes" v-model="data.resultsperpage">
-              <option value="10">10</option>
-              <option value="25">25</option>
-            </select>
-            <label>of {{data.totalResults}}</label>
           </div>
         </div>
-        <div class="result-wrap">
-          <div id="loader"><div class="loader fas fa-spinner"></div>
-        </div>
-        <h2 class="noResults" v-if="!data.totalResults">No results, Please try a different search.</h2>
-        <!-- Each result -->
-        <div v-else class="result" v-for="result in data.resultslist" :key="result.id">
-          <div class="result__checkbx">
-            <input type="checkbox" :id="result.grant_number" v-model="selected.results" :value="result"/>
-            <label :for="result.grant_number"></label>
-          </div>
-          <img :src="'assets/' + result.icon + '-icon.svg'" class="lg" />
-          <div class="result_box">
-            <h3 class="res_title">{{result.resource_title}}</h3>
-            <span class="info">Principal Investigator:<span> {{result.pi}}</span></span>
-            <span class="info">Institution:<span> {{result.institution}}</span></span>
-            <template v-if="result.type == 'c'">
-              <span class="info">Location:<span> {{result.location}}</span></span>
-              <span class="info">Number of Participants:<span> {{result.number_participants}}</span></span>
-            </template>
-            <template v-else>
-              <span class="info">Study Populations:<span> {{result.top_cohort_name}}</span></span>
-              <span class="info">Grant Number:<span> {{result.grant_number}}</span></span>
-            </template>
-          </div>
-        </div>
-      </div>
-      </div>
+      </template>
     </div>
   </div>
+</div>
+
+  <!-- Right (Results) column  -->
+<div class="results">
+  <div class="result__header">
+    <h2 class="results__search">
+      Search Results for:
+      <span v-if="search">{{search}}</span>
+      <span v-else>{{data.keyword}}</span>
+    </h2>
+    <div class="results__header--upper">
+      <div class="results__print">
+        <template v-if="!selected.results.length">
+          <button class="results__printPDF--none">Print Selected Items as a PDF
+            <span class="far fa-file-pdf icon--pdf"></span>
+            <div class="results__count">{{selected.results.length}}</div>
+          </button>
+        </template>
+        <template v-else>
+          <button class="results__printPDF" @click="print">Print Selected Items as a PDF
+            <span class="far fa-file-pdf icon--pdf"></span>
+            <div class="results__count">{{selected.results.length}}</div>
+          </button>
+        </template>
+      </div>
+      <h4 class="results__breakdown" v-if="data.typecounts">
+        <strong>{{data.totalResults}} Results:</strong>
+        <span class="icon icon--studyP"></span>{{data.typecounts.c}} Study Populations
+        <span class="icon icon--projects"></span>{{data.typecounts.p}} Projects
+      </h4>
+    </div>
+    <span class="results__appliedfacets-title">Applied Facets:
+      <span class="results__appliedfacets-items">{{appliedFacets()}}</span>
+    </span>
+    <div class="results__options">
+      <div>
+        <div class="results__checkbox--selectall">
+          <input @click="all_res" type="checkbox" id="res_chkbox" />
+          <label for="res_chkbox"></label>
+        </div>
+        <label>Select All</label>
+      </div>
+      <div>
+        <label>Sort:</label>
+        <select @change="getRes">
+          <option value="resource_title">Title (A-Z)</option>
+          <option value="Institution">Institution</option>
+          <option value="PI">Principal Investigator</option>
+          <option value="Type">Type</option>
+        </select>
+      </div>
+
+      <!-- pagination element -->
+      <div class="results__paging">
+        <template v-if="data.page == 1">
+          <span class="results__paging--disbld">&lt;&lt;</span>
+          <span class="results__paging--disbld">&lt;</span>
+        </template>
+        <template v-else>
+          <span class="results__paging-item" @click="handlePaging" id="first">&lt;&lt;</span>
+          <span class="results__paging-item" @click="handlePaging" id="previous">&lt;</span>
+        </template>
+        
+        <span class="results__pagingDisplay">
+          Page {{data.page}} of {{Math.ceil(data.totalResults / data.resultsperpage)}}
+        </span><!--
+      
+    --><template v-if="data.page == Math.ceil(data.totalResults / data.resultsperpage)">
+          <span class="results__paging--disbld">&gt;</span>
+          <span class="results__paging--disbld">&gt;&gt;</span>
+        </template>
+        <template v-else>
+          <span class="results__paging-item" @click="handlePaging" id="next">&gt;</span>
+          <span class="results__paging-item" @click="handlePaging" id="last">&gt;&gt;</span>
+        </template>
+      </div>
+
+      <!-- Show n1 of n2 (resultsperpage element) -->
+      <div>
+        <label>Show:</label>
+        <select class="results__perpage" @change="getRes" v-model="data.resultsperpage">
+          <option value="10">10</option>
+          <option value="25">25</option>
+        </select>
+        <label>of {{data.totalResults}}</label>
+      </div>
+
+    </div>
+  </div>
+  <div class="results__resultWrap">
+
+    <!-- loading indicator -->
+    <div class="results__loader"><div class="results__loaderOptions fas fa-spinner"></div></div>
+
+    <!-- Each result -->
+    <div class="results__result" v-if="data.totalResults" v-for="result in data.resultslist" :key="result.id">
+      <div class="results__checkbox">
+        <input :id="result.resource_title" type="checkbox" :value="result" v-model="selected.results" />
+        <label :for="result.resource_title"></label>
+      </div>
+      <img :src="'assets/' + result.icon + '-icon.svg'" class="icon--lg" />
+      <div class="results__resultBox">
+        <h3 class="results__resultTitle">{{result.resource_title}}</h3>
+        <span class="results__resultInfo">Principal Investigator:<span> {{result.pi}}</span></span>
+        <span class="results__resultInfo">Institution:<span> {{result.institution}}</span></span>
+        <template v-if="result.type == 'c'">
+          <span class="results__resultInfo">Location:<span> {{result.location}}</span></span>
+          <span class="results__resultInfo">Number of Participants:<span> {{result.number_participants}}</span></span>
+        </template>
+        <template v-else>
+          <span class="results__resultInfo">Study Populations:<span> {{result.top_cohort_name}}</span></span>
+          <span class="results__resultInfo">Grant Number:<span> {{result.grant_number}}</span></span>
+        </template>
+      </div>
+    </div>
+
+    <!-- No results -->
+    <h2 class="results--none" v-else>No results, Please try a different search.</h2>
+
+  </div>
+</div>
+
+</div>
   <script>
     var search = 'https://tools3dev.niehs.nih.gov/cohorts/index.cfm?do=remote.search';
     // var search = '/cohorts/index.cdm?do=remote.search'; 
-    function getData(update_url){
-      $(document).ajaxStart(function(){$("#loader").show()});
-      $.ajax({
-        url: update_url,
-        success:function(data){
-          app.data = data
-          if(!app.data.totalResults){app.data.page = 0}
-          var res = app.data.resultslist
-          for(var ult in res){res[ult].icon = res[ult].type == 'c' ? 'cohort' : 'project'}
-        },      
+    function getData(update_url) {
+      $(document).ajaxStart(function(){$(".results__loader").show()});
+      $.ajax({url: update_url})
+      .done(function(data) {
+        app.data = data
+        var res = app.data.resultslist
+        for (var ult in res) {
+          res[ult].icon = res[ult].type == 'c' ? 'cohort' : 'project'
+        }
       })
-      $(document).ajaxComplete(function(){$("#loader").hide()}); 
+      .fail(function() {
+        window.alert('Oops. Something\'s broken. Try again Later.');
+      })
+      .always(function() {
+        $(".results__loader").hide()
+      });
     }
     var app = new Vue({
       el: "#app",
-      data:function(){
+      data: function () {
         return {
           search: '',
           data: {},
+          pages: 0,
           selected: {
             facets: [],
             results: [],
@@ -186,67 +224,72 @@
       },
       created: getData(search), // this.data = _data_init_cohorts;
       methods: {
-        unify: function(e){
-          var val = {};
-          val.src = e.originalTarget ? e.originalTarget : e.srcElement;
-          return val; 
-        }, 
-        print: function(){window.alert('Coming Soon!')},
-        getCode: function(x){return x.split(',').splice(0, 1).join('')},
-        getLabel: function(x){return x.split(',').splice(1, 1).join('')},
-        hasMenu: function(x){return Object.keys(x).length > 0 ? true : false},
-        toggleMenu: function(e){
-
-          //---------- 
-          var src = this.unify(e).src;
-          $(src).toggleClass("rot8");
-          $(document.getElementById(src.innerText)).toggle(200);
-          //----------
-
+        unify: function(e) {
+          return src = e.originalTarget ? e.originalTarget : e.srcElement;
         },
-        all_res:function(e){this.selected.results = this.unify(e).src.checked ? this.data.resultslist : []},
-        page: function(e) {
-          switch(this.unify(e).src.id) {
-            case'first':this.data.page=1; break;
-            case'next': this.data.page++; break;
-            case'previous': this.data.page--; break;
-            case'last': this.data.page = Math.ceil(this.data.totalResults / this.data.resultsperpage)
+        print:function(x){window.alert('Coming Soon!')},
+        getVal:function(x,y){return x.split(',').splice(y, 1).join('')},
+        hasMenu:function(x){return Object.keys(x).length > 0 ? true : false},
+        handleMenu: function(e){
+          $(this.unify(e)).toggleClass("rotate");
+          $(document.getElementById(this.unify(e).innerText)).toggle(200);
+        },
+        all_res: function(e){
+          this.selected.results = this.unify(e).checked ? this.data.resultslist : []
+        },
+        handlePaging: function(e){
+          var lastPage = Math.ceil(this.data.totalResults / this.data.resultsperpage);
+          switch (this.unify(e).id) {
+            case 'first':
+              this.data.page = 1;
+              break;
+            case 'next':
+              this.data.page++;
+              break;
+            case 'previous':
+              this.data.page--;
+              break;
+            case 'last':
+              this.data.page = lastPage;
           }
           this.getRes();
         },
         appliedFacets: function(){
-          var y = [];
-          var sfacets = this.selected.facets;
-          for(var i in sfacets){
-            if(this.getLabel(sfacets[i])){
-              y.push(this.getLabel(sfacets[i]))
-            }
-          }
-          return y.toString();
-        },
-        select_F: function(e){
+          var selected = [];
           var sFacets = this.selected.facets;
-          $(e.target.parentNode.nextElementSibling).toggleClass('rot8');
-          var menu = document.getElementById(e.target.id.slice(3));
-          $(menu).toggle(200);
-          for(var kid in menu.children){
-            if(menu.children[kid].firstChild){
-              var cur_kid = menu.children[kid].firstChild;
-              e.target.checked ? sFacets.push(cur_kid.firstChild.value) : sFacets.splice(sFacets.indexOf(cur_kid.firstChild.value),1)
+          for (var i in sFacets) {
+            if (this.getVal(sFacets[i],1)) {
+              selected.push(this.getVal(sFacets[i],1))
             }
           }
-          this.getRes(); 
+          return selected.toString();
+        },
+        getAllChildren: function(e){
+          var sFacets = this.selected.facets;
+           var menu = document.getElementById(e.target.id.slice(2));
+          // $(menu).toggle(200);
+          for (var kid in menu.children) {
+            if (menu.children[kid].firstChild) {
+              var cur_kid = menu.children[kid].firstChild;
+              e.target.checked ? sFacets.push(cur_kid.firstChild.value) : sFacets.splice(sFacets.indexOf(cur_kid.firstChild.value), 1)
+            }
+          }
+          this.getRes();
         },
         getRes: function(){
           var arg = [];
           var query = '';
-          var facets = this.selected.facets;
+          var sFacets = this.selected.facets;
           var page = '&page=' + this.data.page;
-          for(var item in facets){arg.push(this.getCode(facets[item]))}
-          if(this.search){query+= '&keyword=' + this.search}
-          if(this.data.sort){query+= '&sort=' + this.data.sort}
-          if(this.data.resultsperpage){query+= '&resultsperpage=' + this.data.resultsperpage}
-          if(arg.join()){page = '&page=1'; query += '&qpParamvals=' + arg.join()}
+          for (var item in sFacets){arg.push(this.getVal(sFacets[item],0))}
+          arg = arg.join();
+          if(this.search){query += '&keyword=' + this.search}
+          if(this.data.sort){query += '&sort=' + this.data.sort}
+          if(this.data.resultsperpage){query += '&resultsperpage=' + this.data.resultsperpage}
+          if(arg){
+            page = '&page=1';
+            query += '&qpParamvals=' + arg
+          }
           var q = search + query + page;
           getData(q);
         },
@@ -254,4 +297,5 @@
     })
   </script>
 </body>
+
 </html>
